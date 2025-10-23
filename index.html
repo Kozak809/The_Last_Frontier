@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Last Frontier</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            color: white;
+        }
+
+        .game-container {
+            background: rgba(0, 0, 0, 0.8);
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        canvas {
+            border: 2px solid #4a90e2;
+            border-radius: 10px;
+            background: #1a1a2e;
+        }
+
+        .ui-panel {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 15px;
+            padding: 10px;
+            background: rgba(74, 144, 226, 0.2);
+            border-radius: 8px;
+        }
+
+        .ui-element {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 8px 15px;
+            border-radius: 5px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        button {
+            background: linear-gradient(45deg, #4a90e2, #357abd);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        button:hover {
+            background: linear-gradient(45deg, #357abd, #2968a3);
+            transform: translateY(-2px);
+        }
+
+        button:disabled {
+            background: #666;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .menu {
+            text-align: center;
+            padding: 40px;
+        }
+
+        .menu h1 {
+            font-size: 2.5em;
+            background: linear-gradient(45deg, #4a90e2, #74b9ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .level-path-container {
+            position: relative;
+            width: 80vw;
+            height: 60vh;
+            margin: 20px auto;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            padding: 20px;
+            overflow: hidden;
+        }
+
+        .level-path {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+
+        .path-line {
+            position: absolute;
+            background: linear-gradient(90deg, #4a90e2, #74b9ff);
+            border-radius: 3px;
+            z-index: 1;
+        }
+
+        .level-node {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            z-index: 2;
+            border: 3px solid transparent;
+        }
+
+        .level-node.available {
+            background: linear-gradient(45deg, #4a90e2, #74b9ff);
+            color: white;
+            box-shadow: 0 4px 15px rgba(74, 144, 226, 0.4);
+        }
+
+        .level-node.available:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 20px rgba(74, 144, 226, 0.6);
+        }
+
+        .level-node.locked {
+            background: linear-gradient(45deg, #666, #888);
+            color: #ccc;
+            cursor: not-allowed;
+        }
+
+        .level-node.completed {
+            background: linear-gradient(45deg, #00b894, #00cec9);
+            color: white;
+            border-color: #fdcb6e;
+        }
+
+        .level-info {
+            position: absolute;
+            bottom: -40px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            white-space: nowrap;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .level-node:hover .level-info {
+            opacity: 1;
+        }
+
+        .path-title {
+            text-align: center;
+            font-size: 1.2em;
+            color: #74b9ff;
+        }
+
+        .back-button {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            padding: 8px 16px;
+            font-size: 12px;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <!-- Меню выбора уровня -->
+        <div id="menu" class="menu">
+            <h1>The Last Frontier</h1>
+            <div class="level-path-container">
+                <div class="level-path" id="levelPath">
+                    <!-- Путь и уровни будут созданы динамически -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Игровой экран -->
+        <div id="game" class="hidden">
+            <button class="back-button" onclick="showMenu()">← Меню</button>
+            <canvas id="gameCanvas" width="800" height="600"></canvas>
+            <div class="ui-panel">
+                <div class="ui-element">
+                    <button id="nextWaveBtn" onclick="startNextWave()">Следующая волна</button>
+                    <button id="speedBtn" style="margin-left:8px" onclick="toggleSpeed()">Скорость x2</button>
+                </div>
+            </div>
+        </div>
+        <!-- Результат уровня: победа/поражение -->
+        <div id="resultOverlay" class="hidden">
+          <div class="result-panel">
+            <h2 id="resultTitle">Победа!</h2>
+            <div id="resultStars" class="stars"></div>
+            <button id="resultOkBtn">ОК</button>
+          </div>
+        </div>
+
+        <script src="gameData.js"></script>
+        <script src="game.js"></script>
+    </div>
+
+    <style>
+      #resultOverlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.7);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+      }
+      #resultOverlay.hidden { display: none; }
+      .result-panel {
+        background: #0f172a;
+        border: 1px solid #334155;
+        border-radius: 10px;
+        padding: 24px 28px;
+        min-width: 280px;
+        color: #fff;
+        text-align: center;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+      }
+      .result-panel h2 { margin: 0 0 12px; color: #4ecdc4; font-weight: 700; }
+      .stars { font-size: 28px; margin: 8px 0 16px; letter-spacing: 6px; }
+      .stars .star { color: #475569; text-shadow: none; }
+      .stars .star.filled { color: #fbbf24; text-shadow: 0 0 6px rgba(251,191,36,0.6); }
+      #resultOkBtn {
+        background: #334155;
+        color: #fff;
+        border: 1px solid #475569;
+        border-radius: 6px;
+        padding: 8px 14px;
+        cursor: pointer;
+      }
+      #resultOkBtn:hover { background: #3b475d; }
+    </style>
+</body>
+</html>
